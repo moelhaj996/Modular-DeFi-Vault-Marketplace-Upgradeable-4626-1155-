@@ -1,0 +1,292 @@
+name: Security Audit
+
+on:
+  schedule:
+    # Run weekly security audit on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      audit_type:
+        description: 'Type of audit to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - slither
+          - mythx
+          - echidna
+
+env:
+  NODE_VERSION: '18.x'
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  slither-audit:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.audit_type == 'all' || github.event.inputs.audit_type == 'slither' || github.event_name == 'schedule' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Compile contracts
+        run: yarn build:contracts
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Slither
+        run: |
+          python -m pip install --upgrade pip
+          pip install slither-analyzer
+
+      - name: Run Slither analysis
+        run: |
+          chmod +x scripts/audit/run-slither.sh
+          ./scripts/audit/run-slither.sh
+
+      - name: Upload Slither results
+        uses: actions/upload-artifact@v3
+        with:
+          name: slither-audit-results
+          path: audits/slither/
+
+      - name: Create Slither report issue
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const title = `🚨 Slither Security Audit Failed - ${new Date().toISOString().split('T')[0]}`;
+            const body = `
+            ## Slither Security Audit Failed
+
+            **Date:** ${new Date().toISOString()}
+            **Branch:** ${context.ref}
+            **Commit:** ${context.sha}
+
+            The automated Slither security audit has detected issues that require attention.
+
+            ### Actions Required:
+            1. Review the Slither report in the artifacts
+            2. Address critical and high severity issues
+            3. Update code and re-run the audit
+
+            ### Artifacts:
+            Check the \`slither-audit-results\` artifact for detailed findings.
+
+            **Priority:** High
+            **Type:** Security
+            `;
+
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'audit', 'high-priority']
+            });
+
+  mythx-audit:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.audit_type == 'all' || github.event.inputs.audit_type == 'mythx' || github.event_name == 'schedule' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Compile contracts
+        run: yarn build:contracts
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install MythX CLI
+        run: |
+          python -m pip install --upgrade pip
+          pip install mythx-cli
+
+      - name: Run MythX analysis
+        run: |
+          chmod +x scripts/audit/run-mythx.sh
+          ./scripts/audit/run-mythx.sh
+        env:
+          MYTHX_API_KEY: ${{ secrets.MYTHX_API_KEY }}
+
+      - name: Upload MythX results
+        uses: actions/upload-artifact@v3
+        with:
+          name: mythx-audit-results
+          path: audits/mythx/
+
+  echidna-fuzzing:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.audit_type == 'all' || github.event.inputs.audit_type == 'echidna' || github.event_name == 'schedule' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Echidna
+        run: |
+          wget https://github.com/crytic/echidna/releases/download/v2.2.1/echidna-2.2.1-Ubuntu-18.04.tar.gz
+          tar -xzf echidna-2.2.1-Ubuntu-18.04.tar.gz
+          sudo mv echidna /usr/local/bin/
+          chmod +x /usr/local/bin/echidna
+
+      - name: Run Echidna fuzzing
+        run: |
+          chmod +x scripts/audit/run-echidna.sh
+          timeout 30m ./scripts/audit/run-echidna.sh || true
+
+      - name: Upload Echidna results
+        uses: actions/upload-artifact@v3
+        with:
+          name: echidna-fuzzing-results
+          path: audits/echidna/
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Audit dependencies
+        run: |
+          echo "## Root Dependencies" > dependency-audit.md
+          yarn audit --json >> dependency-audit.md || true
+
+          echo "## API Dependencies" >> dependency-audit.md
+          cd api && yarn audit --json >> ../dependency-audit.md || true
+
+          echo "## Web Dependencies" >> dependency-audit.md
+          cd ../web && yarn audit --json >> ../dependency-audit.md || true
+
+      - name: Upload dependency audit
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-audit-results
+          path: dependency-audit.md
+
+  generate-security-report:
+    runs-on: ubuntu-latest
+    needs: [slither-audit, mythx-audit, echidna-fuzzing, dependency-audit]
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate security report
+        run: |
+          mkdir -p security-report
+
+          echo "# Security Audit Report" > security-report/README.md
+          echo "**Generated:** $(date)" >> security-report/README.md
+          echo "**Branch:** ${GITHUB_REF}" >> security-report/README.md
+          echo "**Commit:** ${GITHUB_SHA}" >> security-report/README.md
+          echo "" >> security-report/README.md
+
+          echo "## Summary" >> security-report/README.md
+          echo "This report contains the results of automated security audits run on the DeFi Vault codebase." >> security-report/README.md
+          echo "" >> security-report/README.md
+
+          echo "## Audit Tools Used" >> security-report/README.md
+          echo "- **Slither**: Static analysis for Solidity" >> security-report/README.md
+          echo "- **MythX**: Deep security analysis" >> security-report/README.md
+          echo "- **Echidna**: Property-based fuzzing" >> security-report/README.md
+          echo "- **Dependency Audit**: NPM/Yarn security audit" >> security-report/README.md
+          echo "" >> security-report/README.md
+
+          echo "## Files Included" >> security-report/README.md
+          find . -name "*audit*" -type f | sort >> security-report/README.md
+
+          # Copy all audit results
+          find . -name "*audit*" -type d -exec cp -r {} security-report/ \; 2>/dev/null || true
+
+      - name: Upload comprehensive security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: comprehensive-security-report
+          path: security-report/
+          retention-days: 90
+
+      - name: Create security summary issue
+        if: github.event_name == 'schedule'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const title = `📊 Weekly Security Audit Summary - ${new Date().toISOString().split('T')[0]}`;
+            const body = `
+            ## Weekly Security Audit Summary
+
+            **Date:** ${new Date().toISOString()}
+            **Branch:** ${context.ref}
+            **Commit:** ${context.sha}
+
+            ### Audit Results:
+            - ✅ Slither Analysis: ${{ needs.slither-audit.result }}
+            - ✅ MythX Analysis: ${{ needs.mythx-audit.result }}
+            - ✅ Echidna Fuzzing: ${{ needs.echidna-fuzzing.result }}
+            - ✅ Dependency Audit: ${{ needs.dependency-audit.result }}
+
+            ### Artifacts Available:
+            - \`comprehensive-security-report\`: Complete audit results
+            - Individual tool results in separate artifacts
+
+            ### Next Steps:
+            1. Review all audit results
+            2. Address any identified issues
+            3. Update security documentation if needed
+
+            **Auto-generated by Security Audit Workflow**
+            `;
+
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'audit', 'weekly-report']
+            });
