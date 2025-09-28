@@ -334,4 +334,4 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 **⚠️ Disclaimer**: This software is provided as-is and may contain bugs. Use at your own risk. Always conduct thorough testing and audits before deploying to mainnet with real funds.
 
-**Built with ❤️ by the DeFi Vault Team**
+**Built with Mohamed ❤️ by the DeFi Vault Team**
