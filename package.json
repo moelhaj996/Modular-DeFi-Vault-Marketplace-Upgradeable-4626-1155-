@@ -1,6 +1,7 @@
 {
   "name": "modular-defi-vault-marketplace",
   "version": "1.0.0",
+  "private": true,
   "description": "Upgradeable DeFi Vault & Marketplace with ERC-4626 + ERC-1155",
   "keywords": ["defi", "vault", "erc4626", "erc1155", "upgradeable", "marketplace"],
   "author": "Your Name",

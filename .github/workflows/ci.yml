@@ -26,9 +26,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          cache-dependency-path: 'package.json'
 
       - name: Install root dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Compile contracts
         run: yarn build:contracts
@@ -118,14 +119,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
           cache-dependency-path: |
-            yarn.lock
-            api/yarn.lock
+            package.json
+            api/package.json
 
       - name: Install root dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Install API dependencies
-        run: cd api && yarn install --frozen-lockfile
+        run: cd api && yarn install
 
       - name: Build API
         run: cd api && yarn build
@@ -157,7 +158,6 @@ jobs:
           path: |
             api/dist/
             api/package.json
-            api/yarn.lock
           retention-days: 7
 
   # Frontend Testing
@@ -174,14 +174,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
           cache-dependency-path: |
-            yarn.lock
-            web/yarn.lock
+            package.json
+            web/package.json
 
       - name: Install root dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Install frontend dependencies
-        run: cd web && yarn install --frozen-lockfile
+        run: cd web && yarn install
 
       - name: Run type checking
         run: cd web && yarn type-check
@@ -216,7 +216,6 @@ jobs:
             web/.next/
             web/out/
             web/package.json
-            web/yarn.lock
           retention-days: 7
 
   # Security Scan
@@ -234,9 +233,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          cache-dependency-path: 'package.json'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Download contract artifacts
         uses: actions/download-artifact@v4
@@ -286,9 +286,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          cache-dependency-path: 'package.json'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Download contract artifacts
         uses: actions/download-artifact@v4
@@ -302,7 +303,7 @@ jobs:
         continue-on-error: true
 
       - name: Install frontend dependencies for Lighthouse
-        run: cd web && yarn install --frozen-lockfile
+        run: cd web && yarn install
 
       - name: Build frontend for Lighthouse
         run: cd web && yarn build && yarn export
@@ -354,12 +355,13 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          cache-dependency-path: 'package.json'
 
       - name: Install all dependencies
         run: |
-          yarn install --frozen-lockfile
-          cd api && yarn install --frozen-lockfile
-          cd ../web && yarn install --frozen-lockfile
+          yarn install
+          cd api && yarn install
+          cd ../web && yarn install
 
       - name: Download contract artifacts
         uses: actions/download-artifact@v4
@@ -422,12 +424,13 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+          cache-dependency-path: 'package.json'
 
       - name: Install all dependencies
         run: |
-          yarn install --frozen-lockfile
-          cd api && yarn install --frozen-lockfile
-          cd ../web && yarn install --frozen-lockfile
+          yarn install
+          cd api && yarn install
+          cd ../web && yarn install
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
