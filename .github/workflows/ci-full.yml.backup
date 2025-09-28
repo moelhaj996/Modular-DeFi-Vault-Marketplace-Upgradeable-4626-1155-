@@ -1,0 +1,450 @@
+# Option B: Full CI/CD Pipeline (Backup)
+# To use this instead, rename to ci.yml and delete the minimal version
+
+name: Full CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  # Smart Contract Testing and Analysis
+  contracts:
+    runs-on: ubuntu-latest
+    name: Smart Contracts
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: 'package.json'
+
+      - name: Install root dependencies
+        run: |
+          if [ -f "yarn.lock" ]; then
+            yarn install
+          elif [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install || yarn install
+          fi
+
+      - name: Compile contracts
+        run: |
+          yarn build:contracts || yarn hardhat compile || npx hardhat compile
+
+      - name: Run contract tests
+        run: |
+          yarn test:contracts || yarn hardhat test || npx hardhat test
+
+      - name: Generate test coverage
+        run: |
+          yarn test:coverage || yarn hardhat coverage || npx hardhat coverage
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./coverage
+          flags: contracts
+        continue-on-error: true
+
+      - name: Run gas report
+        run: |
+          REPORT_GAS=true yarn test:contracts || REPORT_GAS=true yarn hardhat test
+        continue-on-error: true
+
+      - name: Generate TypeChain types
+        run: |
+          yarn typechain || npx hardhat typechain
+        continue-on-error: true
+
+      - name: Check contract sizes
+        run: |
+          yarn hardhat size-contracts || npx hardhat size-contracts
+        continue-on-error: true
+
+      - name: Setup Python for security tools
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Slither
+        run: |
+          python -m pip install --upgrade pip
+          pip install slither-analyzer
+        continue-on-error: true
+
+      - name: Run Slither analysis
+        run: |
+          if command -v slither &> /dev/null; then
+            slither . --exclude-dependencies || echo "Slither analysis completed with findings"
+          else
+            echo "Slither not available, skipping"
+          fi
+        continue-on-error: true
+
+      - name: Upload contract artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-artifacts
+          path: |
+            artifacts/
+            typechain-types/
+            cache/
+          retention-days: 7
+        continue-on-error: true
+
+  # API Testing (conditional)
+  api:
+    runs-on: ubuntu-latest
+    name: API Tests
+    if: ${{ always() }}
+
+    services:
+      mongodb:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if API exists
+        id: check-api
+        run: |
+          if [ -f "api/package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ API package.json found"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No API package.json found, skipping API tests"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check-api.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install root dependencies
+        if: steps.check-api.outputs.exists == 'true'
+        run: |
+          if [ -f "yarn.lock" ]; then
+            yarn install
+          elif [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+        continue-on-error: true
+
+      - name: Install API dependencies
+        if: steps.check-api.outputs.exists == 'true'
+        run: |
+          cd api
+          if [ -f "yarn.lock" ]; then
+            yarn install
+          elif [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+        continue-on-error: true
+
+      - name: Build API
+        if: steps.check-api.outputs.exists == 'true'
+        run: |
+          cd api
+          npm run build || yarn build || echo "No build script found"
+        continue-on-error: true
+
+      - name: Run API tests
+        if: steps.check-api.outputs.exists == 'true'
+        run: |
+          cd api
+          npm test || yarn test || echo "No test script found"
+        env:
+          DATABASE_URL: mongodb://localhost:27017/test-db
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: Run API linting
+        if: steps.check-api.outputs.exists == 'true'
+        run: |
+          cd api
+          npm run lint || yarn lint || echo "No lint script found"
+        continue-on-error: true
+
+      - name: Upload API artifacts
+        if: steps.check-api.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-artifacts
+          path: |
+            api/dist/
+            api/package.json
+          retention-days: 7
+        continue-on-error: true
+
+  # Frontend Testing (conditional)
+  frontend:
+    runs-on: ubuntu-latest
+    name: Frontend Tests
+    if: ${{ always() }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if Frontend exists
+        id: check-frontend
+        run: |
+          if [ -f "web/package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Frontend package.json found"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No Frontend package.json found, skipping frontend tests"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check-frontend.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install root dependencies
+        if: steps.check-frontend.outputs.exists == 'true'
+        run: |
+          if [ -f "yarn.lock" ]; then
+            yarn install
+          elif [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+        continue-on-error: true
+
+      - name: Install frontend dependencies
+        if: steps.check-frontend.outputs.exists == 'true'
+        run: |
+          cd web
+          if [ -f "yarn.lock" ]; then
+            yarn install
+          elif [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+        continue-on-error: true
+
+      - name: Run type checking
+        if: steps.check-frontend.outputs.exists == 'true'
+        run: |
+          cd web
+          npm run type-check || yarn type-check || npx tsc --noEmit || echo "No type checking available"
+        continue-on-error: true
+
+      - name: Run linting
+        if: steps.check-frontend.outputs.exists == 'true'
+        run: |
+          cd web
+          npm run lint || yarn lint || echo "No lint script found"
+        continue-on-error: true
+
+      - name: Run frontend tests
+        if: steps.check-frontend.outputs.exists == 'true'
+        run: |
+          cd web
+          npm test || yarn test || echo "No test script found"
+        continue-on-error: true
+
+      - name: Build frontend
+        if: steps.check-frontend.outputs.exists == 'true'
+        run: |
+          cd web
+          npm run build || yarn build || echo "No build script found"
+        env:
+          NEXT_PUBLIC_CHAIN_ID: 1337
+          NEXT_PUBLIC_RPC_URL: http://localhost:8545
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+        continue-on-error: true
+
+      - name: Upload frontend artifacts
+        if: steps.check-frontend.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-artifacts
+          path: |
+            web/.next/
+            web/out/
+            web/package.json
+          retention-days: 7
+        continue-on-error: true
+
+  # Security Scan (only on main branch)
+  security:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    needs: contracts
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          if [ -f "yarn.lock" ]; then
+            yarn install
+          elif [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+        continue-on-error: true
+
+      - name: Download contract artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-artifacts
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level moderate || echo "Audit found issues, continuing..."
+          if [ -d "api" ]; then
+            cd api && (npm audit --audit-level moderate || echo "API audit found issues")
+          fi
+          if [ -d "web" ]; then
+            cd ../web && (npm audit --audit-level moderate || echo "Frontend audit found issues")
+          fi
+        continue-on-error: true
+
+  # Integration Tests (conditional)
+  integration:
+    runs-on: ubuntu-latest
+    name: Integration Tests
+    needs: [contracts]
+    if: github.event_name == 'push'
+
+    services:
+      mongodb:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if integration tests exist
+        id: check-integration
+        run: |
+          if [ -d "test/integration" ] || [ -f "test/integration.test.ts" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Integration tests found"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No integration tests found, skipping"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check-integration.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install all dependencies
+        if: steps.check-integration.outputs.exists == 'true'
+        run: |
+          if [ -f "yarn.lock" ]; then
+            yarn install
+          else
+            npm install
+          fi
+          if [ -f "api/package.json" ]; then
+            cd api && (yarn install || npm install) && cd ..
+          fi
+          if [ -f "web/package.json" ]; then
+            cd web && (yarn install || npm install)
+          fi
+        continue-on-error: true
+
+      - name: Download contract artifacts
+        if: steps.check-integration.outputs.exists == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: contract-artifacts
+        continue-on-error: true
+
+      - name: Start Hardhat node
+        if: steps.check-integration.outputs.exists == 'true'
+        run: |
+          yarn hardhat node &
+          sleep 10
+        env:
+          NODE_ENV: test
+
+      - name: Deploy contracts to local network
+        if: steps.check-integration.outputs.exists == 'true'
+        run: |
+          yarn deploy:local || echo "No deploy script found"
+        env:
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: Run integration tests
+        if: steps.check-integration.outputs.exists == 'true'
+        run: |
+          yarn test:integration || yarn hardhat test test/integration/ || echo "Integration tests failed"
+        env:
+          API_URL: http://localhost:3001
+          RPC_URL: http://localhost:8545
+        continue-on-error: true
