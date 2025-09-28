@@ -254,7 +254,7 @@ contract Rewards1155 is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC1155Upgradeable, AccessControlUpgradeable)
+        override(ERC1155Upgradeable, AccessRoles)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
