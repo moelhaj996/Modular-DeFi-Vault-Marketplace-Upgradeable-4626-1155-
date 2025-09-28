@@ -148,6 +148,22 @@ contract Strategy is
         return balanceOf(owner);
     }
 
+    function asset() public view override(ERC4626Upgradeable, IStrategy) returns (IERC20) {
+        return IERC20(super.asset());
+    }
+
+    function previewDeposit(uint256 assets) public view override(ERC4626Upgradeable, IStrategy) returns (uint256) {
+        return super.previewDeposit(assets);
+    }
+
+    function previewWithdraw(uint256 assets) public view override(ERC4626Upgradeable, IStrategy) returns (uint256) {
+        return super.previewWithdraw(assets);
+    }
+
+    function previewRedeem(uint256 shares) public view override(ERC4626Upgradeable, IStrategy) returns (uint256) {
+        return super.previewRedeem(shares);
+    }
+
     function harvest() external onlyStrategyManager returns (uint256 yield) {
         uint256 currentBalance = IERC20(asset()).balanceOf(address(this));
         if (currentBalance > _totalAssets) {

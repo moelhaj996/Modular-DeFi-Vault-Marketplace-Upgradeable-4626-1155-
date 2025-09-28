@@ -48,13 +48,6 @@ contract Vault is
     mapping(address => uint256) private _userLastAction;
     mapping(address => uint256) private _userTotalDeposits;
 
-    event StrategyAdded(address indexed strategy, uint256 allocation);
-    event StrategyRemoved(address indexed strategy);
-    event StrategyUpdated(address indexed strategy, uint256 newAllocation);
-    event Harvest(address indexed strategy, uint256 yield);
-    event EmergencyWithdraw(address indexed strategy, uint256 amount);
-    event DepositLimitUpdated(uint256 newLimit);
-    event WithdrawLimitUpdated(uint256 newLimit);
     event RewardsContractUpdated(address indexed newRewards);
     event PerformanceFeeUpdated(uint256 newFee);
     event ManagementFeeUpdated(uint256 newFee);
@@ -82,7 +75,7 @@ contract Vault is
 
     function deposit(uint256 assets, address receiver)
         public
-        override(ERC4626Upgradeable, IVault)
+        override(ERC4626Upgradeable)
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -103,7 +96,7 @@ contract Vault is
 
     function withdraw(uint256 assets, address receiver, address owner)
         public
-        override(ERC4626Upgradeable, IVault)
+        override(ERC4626Upgradeable)
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -122,7 +115,7 @@ contract Vault is
 
     function redeem(uint256 shares, address receiver, address owner)
         public
-        override(ERC4626Upgradeable, IVault)
+        override(ERC4626Upgradeable)
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -146,7 +139,7 @@ contract Vault is
         if (allocation < MIN_ALLOCATION) revert InvalidStrategy();
         if (_strategyList.length() >= MAX_STRATEGIES) revert InvalidStrategy();
         if (_strategies[address(strategy)].active) revert StrategyAlreadyExists();
-        if (strategy.asset() != asset()) revert InvalidStrategy();
+        if (address(strategy.asset()) != asset()) revert InvalidStrategy();
 
         if (totalAllocations + allocation > MAX_BPS) revert InvalidStrategy();
 
@@ -267,7 +260,7 @@ contract Vault is
         }
     }
 
-    function totalAssets() public view override(ERC4626Upgradeable, IVault) returns (uint256) {
+    function totalAssets() public view override(ERC4626Upgradeable) returns (uint256) {
         uint256 total = IERC20(asset()).balanceOf(address(this));
         address[] memory strategies = _strategyList.values();
 

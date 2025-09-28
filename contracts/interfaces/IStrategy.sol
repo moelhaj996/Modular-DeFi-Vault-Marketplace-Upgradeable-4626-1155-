@@ -27,4 +27,5 @@ interface IStrategy {
     function pause() external;
     function unpause() external;
     function paused() external view returns (bool);
+    function harvest() external returns (uint256 yield);
 }

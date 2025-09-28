@@ -29,10 +29,6 @@ contract Rewards1155 is
 
     uint256 private _currentTokenId;
 
-    event RewardCreated(uint256 indexed tokenId, string rewardType, uint256 multiplier);
-    event RewardClaimed(address indexed user, uint256 indexed tokenId, uint256 amount);
-    event RewardBurned(address indexed user, uint256 indexed tokenId, uint256 amount);
-    event RewardTransferred(address indexed from, address indexed to, uint256 indexed tokenId, uint256 amount);
 
     function initialize(string memory uri, address admin) external initializer {
         __ERC1155_init(uri);
@@ -134,7 +130,7 @@ contract Rewards1155 is
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) public override whenNotPaused {
+    ) public override(ERC1155Upgradeable) whenNotPaused {
         RewardInfo memory reward = _rewards[id];
         if (!reward.transferable) revert InvalidRewardType();
 
@@ -155,7 +151,7 @@ contract Rewards1155 is
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) public override whenNotPaused {
+    ) public override(ERC1155Upgradeable) whenNotPaused {
         for (uint256 i = 0; i < ids.length; i++) {
             RewardInfo memory reward = _rewards[ids[i]];
             if (!reward.transferable) revert InvalidRewardType();
@@ -254,7 +250,7 @@ contract Rewards1155 is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC1155Upgradeable, AccessRoles)
+        override(ERC1155Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
