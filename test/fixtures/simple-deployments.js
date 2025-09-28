@@ -1,0 +1,106 @@
+const hre = require("hardhat");
+const { ethers, upgrades } = hre;
+
+async function deployTestFixture() {
+  const [owner, admin, user1, user2, feeRecipient] = await ethers.getSigners();
+
+  // Deploy mock ERC20 token
+  const MockERC20Factory = await ethers.getContractFactory("MockERC20");
+  const mockToken = await MockERC20Factory.deploy(
+    "Test USDC",
+    "TUSDC",
+    6,
+    ethers.parseUnits("1000000", 6) // 1M tokens
+  );
+
+  // Deploy implementations
+  const VaultFactory = await ethers.getContractFactory("Vault");
+  const vaultImplementation = await VaultFactory.deploy();
+
+  const RewardsFactory = await ethers.getContractFactory("Rewards1155");
+  const rewardsImplementation = await RewardsFactory.deploy();
+
+  const StrategyFactory = await ethers.getContractFactory("Strategy");
+  const strategyImplementation = await StrategyFactory.deploy();
+
+  // Deploy VaultFactory
+  const VaultFactoryContract = await ethers.getContractFactory("VaultFactory");
+  const vaultFactory = await upgrades.deployProxy(
+    VaultFactoryContract,
+    [
+      await vaultImplementation.getAddress(),
+      await rewardsImplementation.getAddress(),
+      await strategyImplementation.getAddress(),
+      admin.address
+    ],
+    { initializer: "initialize" }
+  );
+
+  // Deploy proxy instances
+  const vault = await upgrades.deployProxy(
+    VaultFactory,
+    [
+      await mockToken.getAddress(),
+      "Test Vault",
+      "TV",
+      admin.address,
+      feeRecipient.address
+    ],
+    { initializer: "initialize" }
+  );
+
+  const rewards = await upgrades.deployProxy(
+    RewardsFactory,
+    ["https://api.example.com/metadata/{id}.json", admin.address],
+    { initializer: "initialize" }
+  );
+
+  const strategy = await upgrades.deployProxy(
+    StrategyFactory,
+    [
+      await mockToken.getAddress(),
+      "Test Strategy",
+      "TS",
+      admin.address,
+      feeRecipient.address,
+      1000, // 10% performance fee
+      200   // 2% management fee
+    ],
+    { initializer: "initialize" }
+  );
+
+  return {
+    mockToken,
+    vaultImplementation,
+    rewardsImplementation,
+    strategyImplementation,
+    vaultFactory,
+    vault,
+    rewards,
+    strategy,
+    owner,
+    admin,
+    user1,
+    user2,
+    feeRecipient,
+  };
+}
+
+async function setupVaultWithStrategy(fixture) {
+  // Add strategy to vault
+  await fixture.vault.connect(fixture.admin).addStrategy(
+    await fixture.strategy.getAddress(),
+    5000 // 50% allocation
+  );
+
+  // Transfer some tokens to users for testing
+  await fixture.mockToken.transfer(fixture.user1.address, ethers.parseUnits("10000", 6));
+  await fixture.mockToken.transfer(fixture.user2.address, ethers.parseUnits("10000", 6));
+
+  return fixture;
+}
+
+module.exports = {
+  deployTestFixture,
+  setupVaultWithStrategy,
+};

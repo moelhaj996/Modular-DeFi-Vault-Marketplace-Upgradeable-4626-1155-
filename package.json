@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "Upgradeable DeFi Vault & Marketplace with ERC-4626 + ERC-1155",
-  "keywords": ["defi", "vault", "erc4626", "erc1155", "upgradeable", "marketplace"],
+  "keywords": [
+    "defi",
+    "vault",
+    "erc4626",
+    "erc1155",
+    "upgradeable",
+    "marketplace"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "workspaces": [
@@ -67,6 +74,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0",
-    "@openzeppelin/contracts-upgradeable": "^5.0.0"
+    "@openzeppelin/contracts-upgradeable": "^5.0.0",
+    "axios": "^1.12.2"
   }
 }
