@@ -198,7 +198,7 @@ contract Vault is
         emit StrategyUpdated(strategy, newAllocation);
     }
 
-    function harvest(address strategy) external onlyStrategyManager returns (uint256 yield) {
+    function harvest(address strategy) public onlyStrategyManager returns (uint256 yield) {
         if (!_strategies[strategy].active) revert InvalidStrategy();
 
         yield = _strategies[strategy].strategy.harvest();

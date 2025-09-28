@@ -199,12 +199,12 @@ contract Strategy is
 
     function pause() external override onlyPauser {
         _pause();
-        emit StrategyPaused(true);
+        emit StrategyPausedStatus(true);
     }
 
     function unpause() external override onlyPauser {
         _unpause();
-        emit StrategyPaused(false);
+        emit StrategyPausedStatus(false);
     }
 
     function paused() public view override(PausableUpgradeable, IStrategy) returns (bool) {
