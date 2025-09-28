@@ -17,3 +17,6 @@ format: text
 quiet: false
 timeout: 3600
 stopOnFail: false
+cryticArgs: ["--hardhat-ignore-compile"]
+solcArgs: ["--optimize"]
+workers: 4

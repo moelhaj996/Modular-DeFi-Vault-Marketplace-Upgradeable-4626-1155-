@@ -1,0 +1,27 @@
+{
+  "api_key": "${MYTHX_API_KEY}",
+  "timeout": 600,
+  "analysis_mode": "deep",
+  "output_format": "json",
+  "output_file": "audits/mythx/mythx-report.json",
+  "include": [
+    "contracts/vault/*.sol",
+    "contracts/rewards/*.sol",
+    "contracts/strategy/*.sol",
+    "contracts/access/*.sol",
+    "contracts/proxy/*.sol"
+  ],
+  "exclude": [
+    "contracts/mocks/*.sol",
+    "test/**/*.sol"
+  ],
+  "solc_version": "0.8.23",
+  "remappings": [
+    "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/",
+    "@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/"
+  ],
+  "check_libraries": true,
+  "debug": false,
+  "analysis_timeout": 600,
+  "quick_mode": false
+}

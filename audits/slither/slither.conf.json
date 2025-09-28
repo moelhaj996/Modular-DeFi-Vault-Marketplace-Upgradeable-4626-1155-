@@ -1,0 +1,26 @@
+{
+  "detectors_to_run": "all",
+  "detectors_to_exclude": [
+    "pragma",
+    "solc-version",
+    "naming-convention"
+  ],
+  "filter_paths": [
+    "node_modules",
+    "test",
+    "lib"
+  ],
+  "exclude_informational": false,
+  "exclude_low": false,
+  "exclude_medium": false,
+  "exclude_high": false,
+  "json": "audits/slither/slither-report.json",
+  "sarif": "audits/slither/slither.sarif",
+  "disable_color": true,
+  "checklist": true,
+  "markdown": "audits/slither/slither-report.md",
+  "zip": "audits/slither/slither-report.zip",
+  "hardhat": true,
+  "ignore_compile": false,
+  "config_file": "audits/slither/slither.conf.json"
+}
