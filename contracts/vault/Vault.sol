@@ -82,7 +82,7 @@ contract Vault is
 
     function deposit(uint256 assets, address receiver)
         public
-        override(ERC4626Upgradeable, IERC4626)
+        override(ERC4626Upgradeable, IVault)
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -103,7 +103,7 @@ contract Vault is
 
     function withdraw(uint256 assets, address receiver, address owner)
         public
-        override(ERC4626Upgradeable, IERC4626)
+        override(ERC4626Upgradeable, IVault)
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -122,7 +122,7 @@ contract Vault is
 
     function redeem(uint256 shares, address receiver, address owner)
         public
-        override(ERC4626Upgradeable, IERC4626)
+        override(ERC4626Upgradeable, IVault)
         whenNotPaused
         nonReentrant
         returns (uint256)
@@ -267,7 +267,7 @@ contract Vault is
         }
     }
 
-    function totalAssets() public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+    function totalAssets() public view override(ERC4626Upgradeable, IVault) returns (uint256) {
         uint256 total = IERC20(asset()).balanceOf(address(this));
         address[] memory strategies = _strategyList.values();
 

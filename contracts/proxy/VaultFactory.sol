@@ -13,7 +13,7 @@ import {Strategy} from "../strategy/Strategy.sol";
 
 contract VaultFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     error InvalidImplementation();
-    error InvalidAsset();
+    error InvalidFactoryAsset();
     error ZeroAddress();
 
     event VaultCreated(
@@ -77,8 +77,8 @@ contract VaultFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         string memory symbol,
         string memory rewardsUri
     ) external payable returns (address vault, address rewards) {
-        if (address(asset) == address(0)) revert InvalidAsset();
-        if (msg.value < creationFee) revert InvalidAsset();
+        if (address(asset) == address(0)) revert InvalidFactoryAsset();
+        if (msg.value < creationFee) revert InvalidFactoryAsset();
 
         // Deploy vault proxy
         bytes memory vaultInitData = abi.encodeWithSelector(
@@ -137,7 +137,7 @@ contract VaultFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         uint256 performanceFee,
         uint256 managementFee
     ) external returns (address strategy) {
-        if (address(asset) == address(0)) revert InvalidAsset();
+        if (address(asset) == address(0)) revert InvalidFactoryAsset();
         if (feeRecipient_ == address(0)) revert ZeroAddress();
 
         bytes memory initData = abi.encodeWithSelector(
