@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {AccessRoles} from "../access/AccessRoles.sol";
@@ -14,7 +15,8 @@ contract Rewards1155 is
     ERC1155Upgradeable,
     AccessRoles,
     PausableUpgradeable,
-    ReentrancyGuardUpgradeable
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
 {
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -238,6 +240,8 @@ contract Rewards1155 is
     function unpause() external onlyPauser {
         _unpause();
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyUpgrader {}
 
     function _getRewardTypeString(RewardType rewardType) internal pure returns (string memory) {
         if (rewardType == RewardType.BADGE) return "BADGE";

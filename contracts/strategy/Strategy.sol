@@ -6,6 +6,7 @@ import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -17,7 +18,8 @@ contract Strategy is
     ERC4626Upgradeable,
     AccessRoles,
     PausableUpgradeable,
-    ReentrancyGuardUpgradeable
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
 {
     using SafeERC20 for IERC20;
     using Math for uint256;
@@ -220,5 +222,7 @@ contract Strategy is
         return _userLastDeposit[user];
     }
 
-    uint256[45] private __gap;
+    function _authorizeUpgrade(address newImplementation) internal override onlyUpgrader {}
+
+    uint256[44] private __gap;
 }

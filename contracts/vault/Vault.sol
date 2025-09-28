@@ -400,6 +400,8 @@ contract Vault is
         _unpause();
     }
 
+    function _authorizeUpgrade(address newImplementation) internal override onlyUpgrader {}
+
     // View functions
     function getStrategy(address strategy) external view returns (StrategyInfo memory) {
         return _strategies[strategy];
