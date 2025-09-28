@@ -1,5 +1,6 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import hre from "hardhat";
+const { ethers } = hre;
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { deployTestFixture, TestFixture } from "../fixtures/deployments";
 
