@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package vault;
+
+service VaultService {
+  rpc GetAllVaults(GetAllVaultsRequest) returns (GetAllVaultsResponse);
+  rpc GetVault(GetVaultRequest) returns (GetVaultResponse);
+  rpc GetVaultStrategies(GetVaultStrategiesRequest) returns (GetVaultStrategiesResponse);
+  rpc GetVaultMetrics(GetVaultMetricsRequest) returns (GetVaultMetricsResponse);
+  rpc StreamVaultUpdates(StreamVaultUpdatesRequest) returns (stream VaultUpdate);
+}
+
+message GetAllVaultsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  string sort_by = 3;
+  string sort_order = 4;
+  optional bool active = 5;
+  optional string creator = 6;
+  optional string asset = 7;
+}
+
+message GetAllVaultsResponse {
+  repeated VaultInfo vaults = 1;
+  PaginationInfo pagination = 2;
+}
+
+message GetVaultRequest {
+  string vault_address = 1;
+}
+
+message GetVaultResponse {
+  VaultInfo vault = 1;
+}
+
+message GetVaultStrategiesRequest {
+  string vault_address = 1;
+}
+
+message GetVaultStrategiesResponse {
+  repeated StrategyInfo strategies = 1;
+}
+
+message GetVaultMetricsRequest {
+  string vault_address = 1;
+}
+
+message GetVaultMetricsResponse {
+  VaultMetrics metrics = 1;
+}
+
+message StreamVaultUpdatesRequest {
+  repeated string vault_addresses = 1;
+}
+
+message VaultUpdate {
+  string vault_address = 1;
+  VaultInfo vault_info = 2;
+  int64 timestamp = 3;
+}
+
+message VaultInfo {
+  string address = 1;
+  string name = 2;
+  string symbol = 3;
+  string asset = 4;
+  string total_assets = 5;
+  string total_supply = 6;
+  string share_price = 7;
+  double apy = 8;
+  string creator = 9;
+  int64 created_at = 10;
+  bool active = 11;
+}
+
+message StrategyInfo {
+  string address = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 allocation = 4;
+  string total_assets = 5;
+  bool active = 6;
+  double apy = 7;
+  RiskLevel risk_level = 8;
+}
+
+message VaultMetrics {
+  string vault = 1;
+  string tvl = 2;
+  string volume_24h = 3;
+  double apy_7d = 4;
+  double apy_30d = 5;
+  repeated PricePoint share_price_history = 6;
+  int32 user_count = 7;
+  int32 transaction_count = 8;
+}
+
+message PricePoint {
+  int64 timestamp = 1;
+  string price = 2;
+}
+
+message PaginationInfo {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 pages = 4;
+}
+
+enum RiskLevel {
+  RISK_LEVEL_UNSPECIFIED = 0;
+  RISK_LEVEL_LOW = 1;
+  RISK_LEVEL_MEDIUM = 2;
+  RISK_LEVEL_HIGH = 3;
+}
