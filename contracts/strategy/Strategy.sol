@@ -148,8 +148,8 @@ contract Strategy is
         return balanceOf(owner);
     }
 
-    function asset() public view override(ERC4626Upgradeable, IStrategy) returns (IERC20) {
-        return IERC20(super.asset());
+    function asset() public view override(ERC4626Upgradeable, IStrategy) returns (address) {
+        return super.asset();
     }
 
     function previewDeposit(uint256 assets) public view override(ERC4626Upgradeable, IStrategy) returns (uint256) {

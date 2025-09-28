@@ -139,7 +139,7 @@ contract Vault is
         if (allocation < MIN_ALLOCATION) revert InvalidStrategy();
         if (_strategyList.length() >= MAX_STRATEGIES) revert InvalidStrategy();
         if (_strategies[address(strategy)].active) revert StrategyAlreadyExists();
-        if (address(strategy.asset()) != asset()) revert InvalidStrategy();
+        if (strategy.asset() != asset()) revert InvalidStrategy();
 
         if (totalAllocations + allocation > MAX_BPS) revert InvalidStrategy();
 

@@ -13,7 +13,7 @@ interface IStrategy {
     event Withdraw(address indexed caller, uint256 assets, uint256 shares);
     event StrategyPausedStatus(bool paused);
 
-    function asset() external view returns (IERC20);
+    function asset() external view returns (address);
     function totalAssets() external view returns (uint256);
     function deposit(uint256 assets, address receiver) external returns (uint256 shares);
     function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 shares);
