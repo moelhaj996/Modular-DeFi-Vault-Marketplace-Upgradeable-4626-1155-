@@ -2,6 +2,9 @@
 pragma solidity ^0.8.23;
 
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -130,7 +133,7 @@ contract Rewards1155 is
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) public override(ERC1155Upgradeable) whenNotPaused {
+    ) public override(ERC1155Upgradeable, IERC1155) whenNotPaused {
         RewardInfo memory reward = _rewards[id];
         if (!reward.transferable) revert InvalidRewardType();
 
@@ -151,7 +154,7 @@ contract Rewards1155 is
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) public override(ERC1155Upgradeable) whenNotPaused {
+    ) public override(ERC1155Upgradeable, IERC1155) whenNotPaused {
         for (uint256 i = 0; i < ids.length; i++) {
             RewardInfo memory reward = _rewards[ids[i]];
             if (!reward.transferable) revert InvalidRewardType();
@@ -250,7 +253,7 @@ contract Rewards1155 is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override
+        override(AccessControlUpgradeable, ERC1155Upgradeable, IERC165)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
