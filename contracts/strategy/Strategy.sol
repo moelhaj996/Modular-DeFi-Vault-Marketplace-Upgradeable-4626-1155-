@@ -234,6 +234,20 @@ contract Strategy is
         }
     }
 
+    function vaultWithdraw(uint256 amount, address to) external onlyStrategyManager {
+        uint256 balance = IERC20(asset()).balanceOf(address(this));
+        uint256 actualAmount = amount > balance ? balance : amount;
+
+        if (actualAmount > 0) {
+            if (_totalAssets >= actualAmount) {
+                _totalAssets -= actualAmount;
+            } else {
+                _totalAssets = 0;
+            }
+            IERC20(asset()).safeTransfer(to, actualAmount);
+        }
+    }
+
     function getUserLastDeposit(address user) external view returns (uint256) {
         return _userLastDeposit[user];
     }

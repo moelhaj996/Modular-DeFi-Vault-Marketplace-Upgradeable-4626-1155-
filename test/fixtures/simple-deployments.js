@@ -105,10 +105,10 @@ async function setupVaultWithStrategy(fixture) {
     await fixture.vault.getAddress()
   );
 
-  // Add strategy to vault with proper allocation
+  // Add strategy to vault with higher allocation for integration tests
   await fixture.vault.connect(fixture.admin).addStrategy(
     await fixture.strategy.getAddress(),
-    5000 // 50% allocation
+    5000 // 50% allocation, making it the primary strategy
   );
 
   // Transfer tokens to users for testing
@@ -129,17 +129,8 @@ async function setupVaultWithStrategy(fixture) {
     );
   }
 
-  // Fund the vault and strategy with initial liquidity
-  if (fixture.owner && fixture.mockToken) {
-    const vaultAddress = await fixture.vault.getAddress();
-    const strategyAddress = await fixture.strategy.getAddress();
-
-    // Transfer initial liquidity to vault
-    await fixture.mockToken.transfer(vaultAddress, ethers.parseUnits("100000", 6));
-
-    // Transfer initial liquidity to strategy
-    await fixture.mockToken.transfer(strategyAddress, ethers.parseUnits("50000", 6));
-  }
+  // Note: Removed direct token transfers to vault/strategy as they bypass proper accounting
+  // Tests should use proper deposit/withdraw flows through the vault
 
   return fixture;
 }

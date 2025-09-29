@@ -47,12 +47,12 @@ describe("Vault", function () {
         // Add strategy if not already added
         await vault.connect(admin).addStrategy(
           await strategy.getAddress(),
-          5000 // 50% allocation
+          3000 // 30% allocation
         );
 
         const strategyInfo = await vault.getStrategy(await strategy.getAddress());
         expect(strategyInfo.active).to.be.true;
-        expect(strategyInfo.allocation).to.equal(5000);
+        expect(strategyInfo.allocation).to.equal(3000);
         expect(await vault.totalStrategies()).to.equal(1);
       }
     });

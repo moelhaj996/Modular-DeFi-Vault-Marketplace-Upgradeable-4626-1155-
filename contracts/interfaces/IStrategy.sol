@@ -28,4 +28,6 @@ interface IStrategy {
     function unpause() external;
     function paused() external view returns (bool);
     function harvest() external returns (uint256 yield);
+    function vaultWithdraw(uint256 amount, address to) external;
+    function emergencyWithdraw() external;
 }

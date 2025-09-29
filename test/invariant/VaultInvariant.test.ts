@@ -116,13 +116,16 @@ describe("Vault Invariant Tests", function () {
         strategies.push(strategyAddress);
       }
 
+      // Remove existing strategy first to start fresh
+      await vault.connect(admin).removeStrategy(await strategy.getAddress());
+
       // Add strategies with allocations
       await vault.connect(admin).addStrategy(strategies[0], 3000); // 30%
       await vault.connect(admin).addStrategy(strategies[1], 4000); // 40%
 
       // This should fail as it would exceed 100%
       await expect(
-        vault.connect(admin).addStrategy(strategies[2], 4000) // Would make total 130%
+        vault.connect(admin).addStrategy(strategies[2], 4000) // Would make total 110%
       ).to.be.revertedWithCustomError(vault, "InvalidStrategy");
 
       // Total allocations should not exceed MAX_BPS

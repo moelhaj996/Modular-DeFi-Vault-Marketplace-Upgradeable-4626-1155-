@@ -197,12 +197,17 @@ contract Vault is
 
         yield = _strategies[strategy].strategy.harvest();
         if (yield > 0) {
-            _strategies[strategy].totalAssets += yield;
-
-            uint256 feeAmount = (yield * performanceFee) / MAX_BPS;
-            if (feeAmount > 0) {
-                IERC20(asset()).safeTransfer(feeRecipient, feeAmount);
-                yield -= feeAmount;
+            // Get the yield from strategy to vault first
+            try _strategies[strategy].strategy.vaultWithdraw(yield, address(this)) {
+                uint256 feeAmount = (yield * performanceFee) / MAX_BPS;
+                if (feeAmount > 0) {
+                    IERC20(asset()).safeTransfer(feeRecipient, feeAmount);
+                    yield -= feeAmount;
+                }
+                // Keep the remaining yield in the vault
+            } catch {
+                // If yield transfer fails, just update the strategy assets accounting
+                _strategies[strategy].totalAssets += yield;
             }
         }
 
@@ -311,7 +316,7 @@ contract Vault is
             uint256 toWithdraw = needed > strategyAssets ? strategyAssets : needed;
 
             if (toWithdraw > 0) {
-                try _strategies[strategyAddr].strategy.withdraw(toWithdraw, address(this), address(this)) {
+                try _strategies[strategyAddr].strategy.vaultWithdraw(toWithdraw, address(this)) {
                     _strategies[strategyAddr].totalAssets -= toWithdraw;
                     needed -= toWithdraw;
                 } catch {
@@ -325,15 +330,17 @@ contract Vault is
 
     function _emergencyWithdrawFromStrategy(address strategy) internal {
         if (_strategies[strategy].totalAssets > 0) {
-            try _strategies[strategy].strategy.withdraw(
-                _strategies[strategy].totalAssets,
-                address(this),
-                address(this)
-            ) {
+            uint256 assetsToWithdraw = _strategies[strategy].totalAssets;
+            try _strategies[strategy].strategy.vaultWithdraw(assetsToWithdraw, address(this)) {
                 _strategies[strategy].totalAssets = 0;
             } catch {
-                // Emergency withdrawal failed - mark strategy as inactive
-                _strategies[strategy].active = false;
+                // If vaultWithdraw fails, try emergency withdraw on strategy
+                try _strategies[strategy].strategy.emergencyWithdraw() {
+                    _strategies[strategy].totalAssets = 0;
+                } catch {
+                    // Emergency withdrawal failed - mark strategy as inactive
+                    _strategies[strategy].active = false;
+                }
             }
         }
     }
