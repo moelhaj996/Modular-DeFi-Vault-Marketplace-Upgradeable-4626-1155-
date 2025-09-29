@@ -13,6 +13,9 @@ async function deployTestFixture() {
     ethers.parseUnits("1000000", 6) // 1M tokens
   );
 
+  // Mint tokens to owner for distribution
+  await mockToken.mint(owner.address, ethers.parseUnits("1000000", 6));
+
   // Deploy implementations
   const VaultFactory = await ethers.getContractFactory("Vault");
   const vaultImplementation = await VaultFactory.deploy();
@@ -95,18 +98,40 @@ async function setupVaultWithStrategy(fixture) {
     return fixture;
   }
 
-  // Add strategy to vault
+  // Add strategy to vault with proper allocation
   await fixture.vault.connect(fixture.admin).addStrategy(
     await fixture.strategy.getAddress(),
     5000 // 50% allocation
   );
 
-  // Transfer some tokens to users for testing
+  // Transfer tokens to users for testing
   if (fixture.mockToken && fixture.user1) {
-    await fixture.mockToken.transfer(fixture.user1.address, ethers.parseUnits("10000", 6));
+    await fixture.mockToken.transfer(fixture.user1.address, ethers.parseUnits("50000", 6));
+    // Approve vault for deposits
+    await fixture.mockToken.connect(fixture.user1).approve(
+      await fixture.vault.getAddress(),
+      ethers.parseUnits("50000", 6)
+    );
   }
   if (fixture.mockToken && fixture.user2) {
-    await fixture.mockToken.transfer(fixture.user2.address, ethers.parseUnits("10000", 6));
+    await fixture.mockToken.transfer(fixture.user2.address, ethers.parseUnits("50000", 6));
+    // Approve vault for deposits
+    await fixture.mockToken.connect(fixture.user2).approve(
+      await fixture.vault.getAddress(),
+      ethers.parseUnits("50000", 6)
+    );
+  }
+
+  // Fund the vault and strategy with initial liquidity
+  if (fixture.owner && fixture.mockToken) {
+    const vaultAddress = await fixture.vault.getAddress();
+    const strategyAddress = await fixture.strategy.getAddress();
+
+    // Transfer initial liquidity to vault
+    await fixture.mockToken.transfer(vaultAddress, ethers.parseUnits("100000", 6));
+
+    // Transfer initial liquidity to strategy
+    await fixture.mockToken.transfer(strategyAddress, ethers.parseUnits("50000", 6));
   }
 
   return fixture;
