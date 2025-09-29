@@ -1,7 +1,7 @@
-import hre from "hardhat";
+const hre = require("hardhat");
 const { ethers, upgrades } = hre;
 
-export async function deployTestFixture() {
+async function deployTestFixture() {
   const [owner, admin, user1, user2, feeRecipient] = await ethers.getSigners();
 
   // Deploy mock ERC20 token
@@ -88,7 +88,7 @@ export async function deployTestFixture() {
   };
 }
 
-export async function setupVaultWithStrategy(fixture) {
+async function setupVaultWithStrategy(fixture) {
   // Add strategy to vault
   await fixture.vault.connect(fixture.admin).addStrategy(
     await fixture.strategy.getAddress(),
@@ -101,3 +101,8 @@ export async function setupVaultWithStrategy(fixture) {
 
   return fixture;
 }
+
+module.exports = {
+  deployTestFixture,
+  setupVaultWithStrategy,
+};

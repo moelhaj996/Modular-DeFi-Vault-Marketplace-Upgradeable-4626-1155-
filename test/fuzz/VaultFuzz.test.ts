@@ -1,8 +1,8 @@
-import { expect } from "chai";
-import hre from "hardhat";
+const { expect } = require("chai");
+const hre = require("hardhat");
 const { ethers } = hre;
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployTestFixture, setupVaultWithStrategy } from "../fixtures/simple-deployments.mjs";
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
+const { deployTestFixture, setupVaultWithStrategy } = require("../fixtures/simple-deployments");
 
 describe("Vault Fuzz Tests", function () {
   let fixture: any;
