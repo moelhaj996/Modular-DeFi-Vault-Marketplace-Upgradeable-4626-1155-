@@ -98,6 +98,13 @@ async function setupVaultWithStrategy(fixture) {
     return fixture;
   }
 
+  // Grant vault STRATEGY_MANAGER_ROLE on strategy so it can call harvest
+  const STRATEGY_MANAGER_ROLE = await fixture.strategy.STRATEGY_MANAGER_ROLE();
+  await fixture.strategy.connect(fixture.admin).grantRole(
+    STRATEGY_MANAGER_ROLE,
+    await fixture.vault.getAddress()
+  );
+
   // Add strategy to vault with proper allocation
   await fixture.vault.connect(fixture.admin).addStrategy(
     await fixture.strategy.getAddress(),

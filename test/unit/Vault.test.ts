@@ -9,6 +9,7 @@ describe("Vault", function () {
 
   beforeEach(async function () {
     fixture = await loadFixture(deployTestFixture);
+    fixture = await setupVaultWithStrategy(fixture);
   });
 
   describe("Deployment and Initialization", function () {
