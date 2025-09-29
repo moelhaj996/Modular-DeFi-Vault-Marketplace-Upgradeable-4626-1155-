@@ -2,10 +2,10 @@ import { expect } from "chai";
 import hre from "hardhat";
 const { ethers } = hre;
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployTestFixture, setupVaultWithStrategy, TestFixture } from "../fixtures/deployments";
+import { deployTestFixture, setupVaultWithStrategy } from "../fixtures/simple-deployments.mjs";
 
 describe("Vault Invariant Tests", function () {
-  let fixture: TestFixture;
+  let fixture: any;
 
   beforeEach(async function () {
     fixture = await loadFixture(deployTestFixture);
@@ -136,9 +136,10 @@ describe("Vault Invariant Tests", function () {
       const { vault, strategy, user1 } = fixture;
 
       // Non-admin users should never be able to call admin functions
+      const strategyAddress = await strategy.getAddress();
       const adminFunctions = [
-        () => vault.connect(user1).addStrategy(await strategy.getAddress(), 1000),
-        () => vault.connect(user1).removeStrategy(await strategy.getAddress()),
+        () => vault.connect(user1).addStrategy(strategyAddress, 1000),
+        () => vault.connect(user1).removeStrategy(strategyAddress),
         () => vault.connect(user1).setPerformanceFee(500),
         () => vault.connect(user1).setDepositLimit(ethers.parseUnits("1000", 6)),
         () => vault.connect(user1).pause(),

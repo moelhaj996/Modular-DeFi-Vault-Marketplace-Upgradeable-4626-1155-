@@ -2,10 +2,10 @@ import { expect } from "chai";
 import hre from "hardhat";
 const { ethers } = hre;
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployTestFixture, TestFixture } from "../fixtures/deployments";
+import { deployTestFixture } from "../fixtures/simple-deployments.mjs";
 
 describe("Rewards1155", function () {
-  let fixture: TestFixture;
+  let fixture: any;
 
   beforeEach(async function () {
     fixture = await loadFixture(deployTestFixture);
