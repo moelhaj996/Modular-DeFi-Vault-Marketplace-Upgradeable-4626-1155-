@@ -9,7 +9,7 @@ describe("Vault Fuzz Tests", function () {
 
   beforeEach(async function () {
     fixture = await loadFixture(deployTestFixture);
-    await setupVaultWithStrategy(fixture.vault, fixture.strategy, fixture.admin);
+    fixture = await setupVaultWithStrategy(fixture);
   });
 
   describe("Fuzz: Random Deposit/Withdraw Patterns", function () {

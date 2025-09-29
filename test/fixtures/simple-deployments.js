@@ -44,7 +44,7 @@ async function deployTestFixture() {
     [
       await mockToken.getAddress(),
       "Test Vault",
-      "TV",
+      "TVAULT",
       admin.address,
       feeRecipient.address
     ],
@@ -89,6 +89,12 @@ async function deployTestFixture() {
 }
 
 async function setupVaultWithStrategy(fixture) {
+  // Check if fixture has required properties
+  if (!fixture || !fixture.vault || !fixture.strategy || !fixture.admin) {
+    console.error("Invalid fixture passed to setupVaultWithStrategy");
+    return fixture;
+  }
+
   // Add strategy to vault
   await fixture.vault.connect(fixture.admin).addStrategy(
     await fixture.strategy.getAddress(),
@@ -96,8 +102,12 @@ async function setupVaultWithStrategy(fixture) {
   );
 
   // Transfer some tokens to users for testing
-  await fixture.mockToken.transfer(fixture.user1.address, ethers.parseUnits("10000", 6));
-  await fixture.mockToken.transfer(fixture.user2.address, ethers.parseUnits("10000", 6));
+  if (fixture.mockToken && fixture.user1) {
+    await fixture.mockToken.transfer(fixture.user1.address, ethers.parseUnits("10000", 6));
+  }
+  if (fixture.mockToken && fixture.user2) {
+    await fixture.mockToken.transfer(fixture.user2.address, ethers.parseUnits("10000", 6));
+  }
 
   return fixture;
 }

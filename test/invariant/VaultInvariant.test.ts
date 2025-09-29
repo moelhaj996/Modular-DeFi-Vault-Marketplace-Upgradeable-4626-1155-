@@ -9,7 +9,7 @@ describe("Vault Invariant Tests", function () {
 
   beforeEach(async function () {
     fixture = await loadFixture(deployTestFixture);
-    await setupVaultWithStrategy(fixture.vault, fixture.strategy, fixture.admin);
+    fixture = await setupVaultWithStrategy(fixture);
   });
 
   describe("Invariant: Total Assets Consistency", function () {

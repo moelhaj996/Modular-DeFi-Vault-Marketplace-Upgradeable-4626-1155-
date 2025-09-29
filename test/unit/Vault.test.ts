@@ -71,7 +71,7 @@ describe("Vault", function () {
     it("Should remove strategy successfully", async function () {
       const { vault, strategy, admin } = fixture;
 
-      await setupVaultWithStrategy(vault, strategy, admin);
+      fixture = await setupVaultWithStrategy(fixture);
 
       await vault.connect(admin).removeStrategy(await strategy.getAddress());
 
@@ -83,7 +83,7 @@ describe("Vault", function () {
     it("Should update strategy allocation", async function () {
       const { vault, strategy, admin } = fixture;
 
-      await setupVaultWithStrategy(vault, strategy, admin);
+      fixture = await setupVaultWithStrategy(fixture);
 
       await vault.connect(admin).updateStrategyAllocation(
         await strategy.getAddress(),
@@ -97,7 +97,7 @@ describe("Vault", function () {
 
   describe("Deposits and Withdrawals", function () {
     beforeEach(async function () {
-      await setupVaultWithStrategy(fixture.vault, fixture.strategy, fixture.admin);
+      fixture = await setupVaultWithStrategy(fixture);
     });
 
     it("Should deposit assets successfully", async function () {
@@ -238,7 +238,7 @@ describe("Vault", function () {
 
   describe("Emergency Functions", function () {
     beforeEach(async function () {
-      await setupVaultWithStrategy(fixture.vault, fixture.strategy, fixture.admin);
+      fixture = await setupVaultWithStrategy(fixture);
     });
 
     it("Should emergency withdraw from strategy", async function () {
